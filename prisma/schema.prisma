@@ -1,13 +1,13 @@
-generator client{
+generator client {
     provider = "prisma-client-js"
 }
 
-datasource db{
+datasource db {
     provider = "mysql"
-    url = env("DATABASE_URL")
+    url      = env("DATABASE_URL")
 }
 
-model Loja{
+model Loja {
     id           BigInt   @id @default(autoincrement())
     nome         String   @db.VarChar(150)
     slug         String   @unique @db.VarChar(100)
@@ -23,160 +23,200 @@ model Loja{
     categorias   Categoria[]
     produtos     Produto[]
     pedidos      Pedido[]
-    carrinho     Carrinho[]
+    carrinhos    Carrinho[]
+}
+
+model Usuario {
+    id          BigInt   @id @default(autoincrement())
+    nome        String   @db.VarChar(255)
+    email       String   @db.VarChar(255)
+    senha       String   @db.VarChar(255)
+    telefone    String   @db.VarChar(255)
+    tipo        String   @db.VarChar(255)
+    status      String   @db.VarChar(255)
+    dataCriacao DateTime @default(now())
+
+    administradores Administrador[]
+    lojistas        Lojista[]
+    clientes        Cliente[]
+}
+
+model Administrador {
+    id          BigInt @id @default(autoincrement())
+    nivelAcesso String @db.VarChar(30)
+
+    usuarioId BigInt
+    usuario   Usuario @relation(fields: [usuarioId], references: [id])
+}
+
+model Lojista {
+    id           BigInt   @id @default(autoincrement())
+    cargo        String   @db.VarChar(30)
+    data_vinculo DateTime @default(now())
+
+    usuarioId BigInt
+    lojaId    BigInt
+
+    usuario Usuario @relation(fields: [usuarioId], references: [id])
+    loja    Loja    @relation(fields: [lojaId], references: [id])
 }
 
 
+model Categoria {
+    id        BigInt  @id @default(autoincrement())
+    nome      String  @db.VarChar(100)
+    descricao String? @db.Text
+    status    String  @db.VarChar(30)
 
-model Usuario{
-    id          BigInt     @id @default(autoincrement())
-    nome        String     @db.VarChar(255)
-    email       String     @db.VarChar(255)
-    senha       String     @db.VarChar(255)
-    telefone    String     @db.VarChar(255)
-    tipo        String     @db.VarChar(255)
-    status      String     @db.VarChar(255)
-    dataCriacao String     @db.VarChar(255)
+    lojaId BigInt
 
-    administrador   Administrador[]
-    lojista         Lojista[]
-    cliente         Cliente[]
+    loja     Loja      @relation(fields: [lojaId], references: [id])
+    produtos Produto[]
 }
 
-model Administrador{
-    id              BigInt      @id @default(autoincrement())
-    nivelAcesso     String      @db.VarChar(30)
-    
-    usuario     Usuario     @relation(fields: [usuarioId], references [id])
-   
-}
+model Produto {
+    id        BigInt  @id @default(autoincrement())
+    nome      String  @db.VarChar(255)
+    descricao String  @db.VarChar(255)
+    preco     Decimal @db.Decimal(10, 2)
+    status    String  @db.VarChar(255)
+    destaque  Boolean @default(true)
 
-model Lojista{
-    id              BigInt      @id @default(autoincrement()) 
-    cargo           String      @db.VarChar(30)
-    data_vinculo    DateTime    @default(now())
+    categoriaId BigInt
+    lojaId      BigInt
 
-    usuario         Usuario     @relation(fields: [usuarioId], references [id])
-    loja            Loja        @relation(fields: [lojaId], references [id])
+    categoria Categoria @relation(fields: [categoriaId], references: [id])
+    loja      Loja      @relation(fields: [lojaId], references: [id])
 
-}
-
-
-model Cliente{
-    id             BigInt       @id @default(autoincrement)
-    nome           String       @db.VarChar(255)
-    email          String       @db.VarChar(255)
-    telefone       String       @db.VarChar(255)
-    cpf            String       @VarChar(14)
-    dataCadastro   String       @db.VarChar(255)
-    
-
-    usuario     Usuario     @relation(fields: [usuarioId], references [id])
-    loja        Loja        @relation(fields: [lojaId], references [id])
-    
-    carrinho    Carrinho[]
-    pedidos      Pedido[]
-}
-
-model Categoria{
-    id           BigInt     @id @default(autoincrement())
-    nome         String     @db.VarChar(100)
-    descricao    String?    @db.Text
-    status       String     @db.VarChar(30)
-    
-    loja         Loja       @relation(fields: [lojaId], references [id])
-
-    produtos    Produto[]
-    
-}
-
-model Produto{
-    id BigInt       @id        @default(autoincrement())
-    nome            String     @db.VarChar(255)
-    descricao       String     @db.VarChar(255)
-    preco           Decimal    @db.Decimal(10,2)
-    status          String     @db.VarChar(255)
-    destaque        Boolean    @default(true)
-    
-    categoria   Categoria   @relation(fields: [categoriaId], references [id])
-    loja        Loja        @relation(fields: [lojaId], references [id])
-    
     produtosVariacao ProdutoVariacao[]
-    imagens     Imagem[]
-
+    imagens          Imagem[]
+    produtoPedido    ProdutoPedido[]
 }
 
-model ProdutoVariacao{
-    id          BigInt          @id @default(autoincrement())
-    sku         String          @db.VarChar(100) @unique
-    cor         String          @db.VarChar(50)
-    tamanho     String          @db.VarChar(30)
-    preco       Decimal         @db.Decimal(10,2)
-    status      String          @db.VarChar(30)
+model ProdutoVariacao {
+    id       BigInt  @id @default(autoincrement())
+    sku      String  @unique @db.VarChar(100)
+    cor      String  @db.VarChar(50)
+    tamanho  String  @db.VarChar(30)
+    preco    Decimal @db.Decimal(10, 2)
+    status   String  @db.VarChar(30)
 
-    produto     Produto         @relation(fields: [produtoId], references [id])
+    produtoId BigInt
 
-    estoques            Estoque[]
-    produtosCarrinho    ProdutoCarrinho[]
+    produto Produto @relation(fields: [produtoId], references: [id])
+
+    estoques         Estoque[]
+    produtosCarrinho ProdutoCarrinho[]
 }
 
-model Imagem{
-    id          BigInt          @id @default(autoincrement())
-    url         String          @db.VarChar(500)
-    ordem       int             @default(0)
-    tipo        String          @db.VarChar(255)
+model Imagem {
+    id     BigInt @id @default(autoincrement())
+    url    String @db.VarChar(500)
+    ordem  Int    @default(0)
+    tipo   String @db.VarChar(255)
 
-    produto     Produto         @relation(fields: [produtoId], references [id])
+    produtoId BigInt
+
+    produto Produto @relation(fields: [produtoId], references: [id])
 }
 
-model Estoque{
-    id                      BigInt          @id @default(autoincrement())
-    quantidade              Int             @default(0)
-    quantidade_reservada    Int             @default(0)
-    estoque_minimo          Int             @default(0)
-    data_atualizacao        DateTime        @default(now())
+model Estoque {
+    id                   BigInt   @id @default(autoincrement())
+    quantidade           Int      @default(0)
+    quantidade_reservada Int      @default(0)
+    estoque_minimo       Int      @default(0)
+    data_atualizacao     DateTime @default(now())
 
-    produtoVariacao         ProdutoVariacao @relation(fields: [produtoVariacaoId], references [id])
-    
+    produtoVariacaoId BigInt
+
+    produtoVariacao ProdutoVariacao @relation(fields: [produtoVariacaoId], references: [id])
 }
 
-model Carrinho{
-    id                    BigInt      @id @default(autoincrement())
-    status                String      @db.VarChar(255)
-    dataCriacao           DateTime    @default(now())
-    data_atualizacao      DateTime    @default(now())
 
-    cliente     Cliente @relation(fields: [clienteId], references [id])
-    loja        Loja    @relation(fields: [lojaId], references [id])
+model Cliente {
+    id           BigInt   @id @default(autoincrement())
+    nome         String   @db.VarChar(255)
+    email        String   @db.VarChar(255)
+    telefone     String   @db.VarChar(255)
+    cpf          String   @db.VarChar(14)
+    dataCadastro DateTime @default(now())
+
+    usuarioId BigInt
+    lojaId    BigInt
+
+    usuario Usuario @relation(fields: [usuarioId], references: [id])
+    loja    Loja    @relation(fields: [lojaId], references: [id])
+
+    carrinhos Carrinho[]
+    pedidos   Pedido[]
+}
+
+model Carrinho {
+    id               BigInt   @id @default(autoincrement())
+    status           String   @db.VarChar(255)
+    dataCriacao      DateTime @default(now())
+    data_atualizacao DateTime @default(now())
+
+    clienteId BigInt
+    lojaId    BigInt
+
+    cliente Cliente @relation(fields: [clienteId], references: [id])
+    loja    Loja    @relation(fields: [lojaId], references: [id])
 
     produtosCarrinho ProdutoCarrinho[]
-    
 }
 
-model ProdutoCarrinho{
-    quantidade              Int             @default(0)
-    preco_unitario          Decimal         @db.Decimal(10,2)
 
-    carrinho                Carrinho        @relation(fields: [carrinhoId], references [id])
-    produtoVariacao         ProdutoVariacao @relation(fields: [produtoVariacaoId], references [id])
+model ProdutoCarrinho {
+    id                  BigInt      @id @default(autoincrement())
+    quantidade          Int         @default(0)
+    preco_unitario      Decimal     @db.Decimal(10, 2)
+
+    carrinhoId          BigInt
+    produtoVariacaoId   BigInt
+
+    carrinho            Carrinho        @relation(fields: [carrinhoId], references: [id])
+    produtoVariacao     ProdutoVariacao @relation(fields: [produtoVariacaoId], references: [id])
 }
 
-model Pedido{
-    id      BigInt      @id @default(autoincrement())
-    data    DateTime    @default(now())
-    status  String      @db.VarChar(255)
-    
+model Pedido {
+    id          BigInt      @id @default(autoincrement())
+    data        DateTime    @default(now())
+    status      String      @db.VarChar(255)
 
-    cliente     Cliente @relation(fields: [clienteId], references [id])
-    loja        Loja    @relation(fields: [lojaId], references [id]) 
+    clienteId BigInt
+    lojaId    BigInt
+
+    cliente Cliente @relation(fields: [clienteId], references: [id])
+    loja    Loja    @relation(fields: [lojaId], references: [id])
 
     produtosPedidos ProdutoPedido[]
+    pagamento       Pagamento[]
 }
 
-model ProdutoPedido{
-    quantidade              Int             @default(0)
-    preco_unitario          Decimal         @db.Decimal(10,2)
-    subtotal                Decimal         @db.Decimal(10,2)
+model ProdutoPedido {
+    id                  BigInt      @id @default(autoincrement())
+    quantidade          Int         @default(0)
+    preco_unitario      Decimal     @db.Decimal(10, 2)
+    subtotal            Decimal     @db.Decimal(10, 2)
 
-    pedido                  Pedido          @relation(fields: [pedidoId], references [id])
+    pedidoId  BigInt
+    produtoId BigInt
+
+    pedido  Pedido  @relation(fields: [pedidoId], references: [id])
+    produto Produto @relation(fields: [produtoId], references: [id])
+}
+
+model Pagamento {
+    id                  BigInt      @id @default(autoincrement())
+    valor               Decimal     @db.Decimal(10, 2)
+    metodo              String      @db.VarChar(255)
+    status              String      @db.VarChar(255)
+    codigoTransacao     String      @db.VarChar(255)
+    dataPagamento       DateTime    @default(now())
+
+    pedidoId BigInt
+
+    pedido  Pedido  @relation(fields: [pedidoId], references: [id])
+
 }
