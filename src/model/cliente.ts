@@ -1,37 +1,36 @@
-import { Carrinho } from "@prisma/client";
-import { Loja } from "./loja";
 import { Usuario } from "./usuario";
-import {Pedido} from './pedido';
+import { Loja } from "./loja";
+import { Carrinho } from "./carrinho";
+import { Pedido } from "./pedido";
 
 export class Cliente {
-    id: bigint | any;
+    id: number | any;
     nome: string;
     email: string;
     telefone: string;
     cpf: string;
     dataCadastro: Date;
 
-    usuarioId: bigint | any;
-    lojaId: bigint | any;
+    usuarioId: number | any;
+    lojaId: number | any;
 
-    usuario?: Usuario;
-    loja?: Loja;
-    carrinho?: Carrinho | null;
-    pedidos?: Pedido[];
+    usuario?: Usuario | null;
+    loja?: Loja | null;
+
+    carrinhos: Carrinho[] = [];
+    pedidos: Pedido[] = [];
 
     constructor(
         nome: string,
         email: string,
         telefone: string,
         cpf: string,
-        usuarioid: bigint | any,
-        lojaId: bigint | any,
-        dataCadastro: Date,
-        usuario?: Usuario,
-        loja?: Loja,
-        carrinho?: Carrinho | null,
-        pedidos: Pedido[] = [],
-        id: bigint | any = null
+        usuarioId: number | any,
+        lojaId: number | any,
+        usuario: Usuario | null,
+        loja: Loja | null,
+        dataCadastro: Date = new Date(),
+        id: number | any = null
     ) {
         this.id = id;
         this.nome = nome;
@@ -39,11 +38,9 @@ export class Cliente {
         this.telefone = telefone;
         this.cpf = cpf;
         this.dataCadastro = dataCadastro;
-        this.usuarioId = usuarioid;
+        this.usuarioId = usuarioId;
         this.lojaId = lojaId;
         this.usuario = usuario;
         this.loja = loja;
-        this.carrinho = carrinho;
-        this.pedidos = pedidos;
     }
 }

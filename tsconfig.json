@@ -29,6 +29,6 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
     "**/*.mts"
-  ],
+, "src/repository/administradorRepository.ts", "src/service/administradorService.js", "src/service/carrinhoService.js", "src/service/categoriaService.js", "src/service/clienteService.js", "src/service/estoqueService.js", "src/service/imagemService.js", "src/service/lojaService.js", "src/service/lojistaService.js", "src/service/pagamentoService.js", "src/service/pedidoService.js", "src/service/produtoCarrinhoService.js", "src/service/produtoPedidoService.js", "src/service/produtoService.js", "src/model/administrador.ts"  ],
   "exclude": ["node_modules"]
 }

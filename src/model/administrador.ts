@@ -1,17 +1,17 @@
 import { Usuario } from "./usuario";
 
 export class Administrador {
-    id: bigint | any;
-    nivelAcesso: String;
+    id: number | any;
+    nivelAcesso: string;
 
-    usuarioId: bigint | any;
-    usuario: Usuario;
+    usuarioId: number | any;
+    usuario?: Usuario | null;
 
     constructor(
-        nivelAcesso: String,
-        usuarioId: bigint | any,
-        usuario: Usuario,
-        id: bigint | any = null
+        nivelAcesso: string,
+        usuarioId: number | any,
+        usuario: Usuario | null,
+        id: number | any = null
     ) {
         this.id = id;
         this.nivelAcesso = nivelAcesso;

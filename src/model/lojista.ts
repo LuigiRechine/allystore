@@ -1,26 +1,25 @@
-import { Loja } from "./loja";
 import { Usuario } from "./usuario";
+import { Loja } from "./loja";
 
 export class Lojista {
-    id: bigint | any;
-    cargo: String;
+    id: number | any;
+    cargo: string;
     data_vinculo: Date;
 
-    usuarioId: bigint | any;
-    lojaId: bigint | any;
+    usuarioId: number | any;
+    lojaId: number | any;
 
-    usuario: Usuario;
-    loja: Loja;
+    usuario? : Usuario | null;
+    loja? : Loja | null;
 
     constructor(
-
-        cargo: String,
-        usuarioId: bigint | any,
-        lojaId: bigint | any,
-        usuario: Usuario,
-        loja: Loja,
-        data_vinculo: Date,
-        id: bigint | any = null
+        cargo: string,
+        usuarioId: number | any,
+        lojaId: number | any,
+        usuario: Usuario | null,
+        loja: Loja | null,
+        data_vinculo: Date = new Date(),
+        id: number | any = null
     ) {
         this.id = id;
         this.cargo = cargo;
@@ -30,6 +29,4 @@ export class Lojista {
         this.usuario = usuario;
         this.loja = loja;
     }
-
-
 }

@@ -1,22 +1,30 @@
+import { Administrador } from "./administrador";
+import { Lojista } from "./lojista";
+import { Cliente } from "./cliente";
+
 export class Usuario {
-    id: bigint | any;
-    nome: String;
-    email: String;
-    senha: String;
-    telefone: String;
-    tipo: String;
-    status: String;
+    id: number | any;
+    nome: string;
+    email: string;
+    senha: string;
+    telefone: string;
+    tipo: string;
+    status: string;
     dataCriacao: Date;
 
+    administradores: Administrador[] = [];
+    lojistas: Lojista[] = [];
+    clientes: Cliente[] = [];
+
     constructor(
-        nome: String,
-        email: String,
-        senha: String,
-        telefone: String,
-        tipo: String,
-        status: String,
+        nome: string,
+        email: string,
+        senha: string,
+        telefone: string,
+        tipo: string,
+        status: string,
         dataCriacao: Date = new Date(),
-        id: bigint | any = null
+        id: number | any = null
     ) {
         this.id = id;
         this.nome = nome;
@@ -26,6 +34,5 @@ export class Usuario {
         this.tipo = tipo;
         this.status = status;
         this.dataCriacao = dataCriacao;
-     }
-
-} 
+    }
+}

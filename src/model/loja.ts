@@ -1,34 +1,41 @@
+import { Lojista } from "./lojista";
+import { Cliente } from "./cliente";
+import { Categoria } from "./categoria";
+import { Produto } from "./produto";
+import { Pedido } from "./pedido";
+import { Carrinho } from "./carrinho";
+
 export class Loja {
-    id: bigint | any;
-    nome: String;
-    slug: String;
-    logo: String | null;
-    descricao: String | null;
-    email: String;
-    telefone: String | null;
-    status: String;
+    id: number | any;
+    nome: string;
+    slug: string;
+    logo: string | null;
+    descricao: string | null;
+    email: string;
+    telefone: string | null;
+    status: string;
     dataCriacao: Date;
 
-    /*
-        relacionamentos
-        lojistas: Lojista[] = [];
-        clientes: Cliente[] = [];
-        categorias: Categoria[] = [];
-        produtos: Produto[] = [];
-        pedidos: Pedido[] = [];
-        carrinhos: Carrinho[] = [];
-    */
+
+
+    lojistas: Lojista[] = [];
+    clientes: Cliente[] = [];
+    categorias: Categoria[] = [];
+    produtos: Produto[] = [];
+    pedidos: Pedido[] = [];
+    carrinhos: Carrinho[] = [];
+
 
     constructor(
-        nome: String,
-        slug: String,
-        email: String,
-        status: String,
-        logo: String | null = null,
-        descricao: String | null = null,
-        telefone: String | null = null,
+        nome: string,
+        slug: string,
+        email: string,
+        status: string,
+        logo: string | null = null,
+        descricao: string | null = null,
+        telefone: string | null = null,
         dataCriacao: Date = new Date(),
-        id: bigint | any = null
+        id: number | any = null
     ) {
         this.id = id;
         this.nome = nome;

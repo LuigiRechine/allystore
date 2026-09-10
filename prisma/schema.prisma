@@ -8,7 +8,7 @@ datasource db {
 }
 
 model Loja {
-    id           BigInt   @id @default(autoincrement())
+    id           Int   @id @default(autoincrement())
     nome         String   @db.VarChar(150)
     slug         String   @unique @db.VarChar(100)
     logo         String?  @db.VarChar(500)
@@ -27,7 +27,7 @@ model Loja {
 }
 
 model Usuario {
-    id          BigInt   @id @default(autoincrement())
+    id          Int   @id @default(autoincrement())
     nome        String   @db.VarChar(255)
     email       String   @db.VarChar(255)
     senha       String   @db.VarChar(255)
@@ -42,20 +42,20 @@ model Usuario {
 }
 
 model Administrador {
-    id          BigInt @id @default(autoincrement())
+    id          Int @id @default(autoincrement())
     nivelAcesso String @db.VarChar(30)
 
-    usuarioId BigInt
+    usuarioId Int
     usuario   Usuario @relation(fields: [usuarioId], references: [id])
 }
 
 model Lojista {
-    id           BigInt   @id @default(autoincrement())
+    id           Int   @id @default(autoincrement())
     cargo        String   @db.VarChar(30)
     data_vinculo DateTime @default(now())
 
-    usuarioId BigInt
-    lojaId    BigInt
+    usuarioId Int
+    lojaId    Int
 
     usuario Usuario @relation(fields: [usuarioId], references: [id])
     loja    Loja    @relation(fields: [lojaId], references: [id])
@@ -63,27 +63,27 @@ model Lojista {
 
 
 model Categoria {
-    id        BigInt  @id @default(autoincrement())
+    id        Int  @id @default(autoincrement())
     nome      String  @db.VarChar(100)
     descricao String? @db.Text
     status    String  @db.VarChar(30)
 
-    lojaId BigInt
+    lojaId Int
 
     loja     Loja      @relation(fields: [lojaId], references: [id])
     produtos Produto[]
 }
 
 model Produto {
-    id        BigInt  @id @default(autoincrement())
+    id        Int  @id @default(autoincrement())
     nome      String  @db.VarChar(255)
     descricao String  @db.VarChar(255)
     preco     Decimal @db.Decimal(10, 2)
     status    String  @db.VarChar(255)
     destaque  Boolean @default(true)
 
-    categoriaId BigInt
-    lojaId      BigInt
+    categoriaId Int
+    lojaId      Int
 
     categoria Categoria @relation(fields: [categoriaId], references: [id])
     loja      Loja      @relation(fields: [lojaId], references: [id])
@@ -94,14 +94,14 @@ model Produto {
 }
 
 model ProdutoVariacao {
-    id       BigInt  @id @default(autoincrement())
+    id       Int  @id @default(autoincrement())
     sku      String  @unique @db.VarChar(100)
     cor      String  @db.VarChar(50)
     tamanho  String  @db.VarChar(30)
     preco    Decimal @db.Decimal(10, 2)
     status   String  @db.VarChar(30)
 
-    produtoId BigInt
+    produtoId Int
 
     produto Produto @relation(fields: [produtoId], references: [id])
 
@@ -110,39 +110,39 @@ model ProdutoVariacao {
 }
 
 model Imagem {
-    id     BigInt @id @default(autoincrement())
+    id     Int @id @default(autoincrement())
     url    String @db.VarChar(500)
     ordem  Int    @default(0)
     tipo   String @db.VarChar(255)
 
-    produtoId BigInt
+    produtoId Int
 
     produto Produto @relation(fields: [produtoId], references: [id])
 }
 
 model Estoque {
-    id                   BigInt   @id @default(autoincrement())
+    id                   Int   @id @default(autoincrement())
     quantidade           Int      @default(0)
     quantidade_reservada Int      @default(0)
     estoque_minimo       Int      @default(0)
     data_atualizacao     DateTime @default(now())
 
-    produtoVariacaoId BigInt
+    produtoVariacaoId Int
 
     produtoVariacao ProdutoVariacao @relation(fields: [produtoVariacaoId], references: [id])
 }
 
 
 model Cliente {
-    id           BigInt   @id @default(autoincrement())
+    id           Int   @id @default(autoincrement())
     nome         String   @db.VarChar(255)
     email        String   @db.VarChar(255)
     telefone     String   @db.VarChar(255)
     cpf          String   @db.VarChar(14)
     dataCadastro DateTime @default(now())
 
-    usuarioId BigInt
-    lojaId    BigInt
+    usuarioId Int
+    lojaId    Int
 
     usuario Usuario @relation(fields: [usuarioId], references: [id])
     loja    Loja    @relation(fields: [lojaId], references: [id])
@@ -152,13 +152,13 @@ model Cliente {
 }
 
 model Carrinho {
-    id               BigInt   @id @default(autoincrement())
+    id               Int   @id @default(autoincrement())
     status           String   @db.VarChar(255)
     dataCriacao      DateTime @default(now())
     data_atualizacao DateTime @default(now())
 
-    clienteId BigInt
-    lojaId    BigInt
+    clienteId Int
+    lojaId    Int
 
     cliente Cliente @relation(fields: [clienteId], references: [id])
     loja    Loja    @relation(fields: [lojaId], references: [id])
@@ -168,24 +168,24 @@ model Carrinho {
 
 
 model ProdutoCarrinho {
-    id                  BigInt      @id @default(autoincrement())
+    id                  Int      @id @default(autoincrement())
     quantidade          Int         @default(0)
     preco_unitario      Decimal     @db.Decimal(10, 2)
 
-    carrinhoId          BigInt
-    produtoVariacaoId   BigInt
+    carrinhoId          Int
+    produtoVariacaoId   Int
 
     carrinho            Carrinho        @relation(fields: [carrinhoId], references: [id])
     produtoVariacao     ProdutoVariacao @relation(fields: [produtoVariacaoId], references: [id])
 }
 
 model Pedido {
-    id          BigInt      @id @default(autoincrement())
+    id          Int      @id @default(autoincrement())
     data        DateTime    @default(now())
     status      String      @db.VarChar(255)
 
-    clienteId BigInt
-    lojaId    BigInt
+    clienteId Int
+    lojaId    Int
 
     cliente Cliente @relation(fields: [clienteId], references: [id])
     loja    Loja    @relation(fields: [lojaId], references: [id])
@@ -195,27 +195,27 @@ model Pedido {
 }
 
 model ProdutoPedido {
-    id                  BigInt      @id @default(autoincrement())
+    id                  Int      @id @default(autoincrement())
     quantidade          Int         @default(0)
     preco_unitario      Decimal     @db.Decimal(10, 2)
     subtotal            Decimal     @db.Decimal(10, 2)
 
-    pedidoId  BigInt
-    produtoId BigInt
+    pedidoId  Int
+    produtoId Int
 
     pedido  Pedido  @relation(fields: [pedidoId], references: [id])
     produto Produto @relation(fields: [produtoId], references: [id])
 }
 
 model Pagamento {
-    id                  BigInt      @id @default(autoincrement())
+    id                  Int      @id @default(autoincrement())
     valor               Decimal     @db.Decimal(10, 2)
     metodo              String      @db.VarChar(255)
     status              String      @db.VarChar(255)
     codigoTransacao     String      @db.VarChar(255)
     dataPagamento       DateTime    @default(now())
 
-    pedidoId BigInt
+    pedidoId Int
 
     pedido  Pedido  @relation(fields: [pedidoId], references: [id])
 
