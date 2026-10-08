@@ -95,23 +95,23 @@ export const api = {
   produtoCarrinho: recurso<ProdutoCarrinho>('produtoCarrinho'),
 };
 
-/** Login: usa /api/auth/login se existir; senão cai no fallback client-side. */
-export async function login(email: string, senha: string): Promise<Usuario> {
-  try {
-    return await request<Usuario>('/api/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, senha }),
-    });
-  } catch (e) {
-    if (e instanceof ApiError && e.status !== 404) throw e;
-    // Fallback: a rota /api/auth/login ainda não foi adicionada ao projeto.
-    const usuarios = await api.usuario.listar();
-    const achado = usuarios.find(
-      (u) => u.email?.toLowerCase() === email.toLowerCase() && u.senha === senha,
-    );
-    if (!achado) throw new ApiError('E-mail ou senha inválidos.', 401);
-    return achado;
-  }
+export interface Perfil {
+  usuario: Usuario;
+  lojista?: Lojista;
+  loja?: Loja;
+  clientes?: Cliente[];
+}
+
+export function login(email: string, senha: string) {
+  return request<Perfil>('/api/auth/login', { method: 'POST', body: JSON.stringify({ email, senha }) });
+}
+
+export function registrar(dados: Record<string, unknown>) {
+  return request<Perfil>('/api/auth/registrar', { method: 'POST', body: JSON.stringify(dados) });
+}
+
+export function alterarSenha(atual: string, nova: string) {
+  return request<{ ok: true }>('/api/auth/senha', { method: 'POST', body: JSON.stringify({ atual, nova }) });
 }
 
 /** Busca a loja pelo slug (filtra no cliente para funcionar sem rota editada). */

@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { UsuarioRepository } from '@/src/repository/usuarioRepository';
 import { UsuarioService } from '@/src/service/usuarioService';
+import { lerSessao } from '@/src/lib/auth';
+
 
 
 const service = new UsuarioService(new UsuarioRepository());
@@ -25,9 +27,12 @@ export async function PUT(req, { params }) {
     try {
         const { id } = await params;
         const body = await req.json();
+        const sessao = await lerSessao();
 
-
-        const res = await service.atualizar(id, body.nome, body.email, body.senha, body.telefone, body.tipo, body.status);
+        const res = await service.atualizar(
+            id, body.nome, body.email, body.senha, body.telefone, body.tipo, body.status,
+            { admin: sessao?.tipo === 'admin' }
+        );
         return NextResponse.json(res, { status: 200 });
     } catch (e) {
         return NextResponse.json({ erro: e.message }, { status: 400 });

@@ -1,4 +1,9 @@
+import bcrypt from 'bcryptjs';
 import { Usuario } from '@/src/model/usuario';
+
+const TIPOS = ['admin', 'lojista', 'cliente'];
+const STATUS = ['ativo', 'inativo'];
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export class UsuarioService {
     constructor(repository) {
@@ -6,19 +11,18 @@ export class UsuarioService {
     }
 
     async cadastrar(nome, email, senha, telefone, tipo, status) {
-        if(!nome)
-            throw new Error("O nome é obrigatório.");
-        if(!email)
-            throw new Error("O e-mail é obrigatório.");
-        if(!senha)
-            throw new Error("A senha é obrigatória.");
-        if(!telefone)
-            throw new Error("O telefone é obrigatório.");
-        if(!tipo)
-            throw new Error("O tipo é obrigatório.");
-        if(!status)
-            throw new Error("O status é obrigatório.");
-        return await this.repository.salvar(new Usuario(nome, email, senha, telefone, tipo, status));
+        if (!nome) throw new Error("O nome é obrigatório.");
+        if (!email || !EMAIL.test(email)) throw new Error("Informe um e-mail válido.");
+        if (!senha || senha.length < 8) throw new Error("A senha precisa ter ao menos 8 caracteres.");
+        if (!telefone) throw new Error("O telefone é obrigatório.");
+        if (!TIPOS.includes(tipo)) throw new Error("Tipo inválido.");
+        if (!STATUS.includes(status)) throw new Error("Status inválido.");
+
+        email = email.trim().toLowerCase();
+        if (await this.repository.buscarPorEmail(email)) throw new Error("E-mail já cadastrado.");
+
+        const hash = await bcrypt.hash(senha, 10);
+        return await this.repository.salvar(new Usuario(nome, email, hash, telefone, tipo, status));
     }
 
     async listar() {
@@ -27,19 +31,28 @@ export class UsuarioService {
 
     async buscarPorId(id) {
         const usuario = await this.repository.buscarPorId(id);
-        if(!usuario) throw new Error("Usuário não encontrado.");
+        if (!usuario) throw new Error("Usuário não encontrado.");
         return usuario;
     }
 
-    async atualizar(id, nome, email, senha, telefone, tipo, status) {
-        if(!id)
-            throw new Error("ID é obrigatório para atualização.");
-        if(!nome || !email || !senha || !telefone || !tipo || !status)
-            throw new Error("Nome, e-mail, senha, telefone, tipo e status são obrigatórios.");
+    // `admin` vem da sessão (rota). Quem não é admin NÃO consegue mudar tipo/status.
+    async atualizar(id, nome, email, senha, telefone, tipo, status, { admin = false } = {}) {
+        if (!id) throw new Error("ID é obrigatório para atualização.");
+        if (!nome || !email || !telefone) throw new Error("Nome, e-mail e telefone são obrigatórios.");
+        if (!EMAIL.test(email)) throw new Error("Informe um e-mail válido.");
+        if (senha && senha.length < 8) throw new Error("A senha precisa ter ao menos 8 caracteres.");
 
-        await this.buscarPorId(id);
-        const usuarioAtualizado = new Usuario(nome, email, senha, telefone, tipo, status, undefined, id);
-        return await this.repository.atualizar(id, usuarioAtualizado);
+        const atual = await this.buscarPorId(id);
+        email = email.trim().toLowerCase();
+        if (email !== atual.email) {
+            if (await this.repository.buscarPorEmail(email)) throw new Error("E-mail já cadastrado.");
+        }
+
+        const novoTipo = admin && TIPOS.includes(tipo) ? tipo : atual.tipo;
+        const novoStatus = admin && STATUS.includes(status) ? status : atual.status;
+        const hash = senha ? await bcrypt.hash(senha, 10) : undefined; // sem senha = mantém a atual
+
+        return await this.repository.atualizar(id, new Usuario(nome, email, hash, telefone, novoTipo, novoStatus, undefined, id));
     }
 
     async excluir(id) {

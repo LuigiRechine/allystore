@@ -50,13 +50,17 @@ export class UsuarioRepository {
         );
     }
 
+    async buscarPorEmail(email: string) {
+        return await prisma.usuario.findUnique({ where: { email } });
+    }
+
     async atualizar(id: number | bigint, obj: Usuario) {
         return await prisma.usuario.update({
             where: { id: Number(id) },
             data: {
                 nome: obj.nome,
                 email: obj.email,
-                senha: obj.senha,
+                ...(obj.senha ? { senha: obj.senha } : {}),
                 telefone: obj.telefone,
                 tipo: obj.tipo,
                 status: obj.status

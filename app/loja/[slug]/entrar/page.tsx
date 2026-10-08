@@ -6,7 +6,7 @@
 import { Suspense, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { api, login } from '@/src/lib/api';
+import { api, login, registrar } from '@/src/lib/api';
 import { useLoja } from '@/src/context/LojaContext';
 import { sessaoCliente } from '@/src/lib/session';
 import { StoreNav } from '@/src/components/StoreChrome';
@@ -37,11 +37,8 @@ function ConteudoEntrar() {
     setEnviando(true);
     setErro(null);
     try {
-      const usuario = await login(form.email, form.senha);
-      const clientes = await api.cliente.listar();
-      const cliente = clientes.find(
-        (c) => Number(c.usuarioId) === Number(usuario.id) && Number(c.lojaId) === loja.id,
-      );
+      const { usuario, clientes } = await login(form.email, form.senha);
+      const cliente = clientes?.find((c) => Number(c.lojaId) === loja.id);
       if (!cliente) {
         setErro('Esta conta ainda não é cliente desta loja. Crie um cadastro abaixo.');
         setModo('cadastro');
@@ -63,26 +60,21 @@ function ConteudoEntrar() {
       if (form.senha !== form.confirmar) throw new Error('As senhas não conferem.');
       if (form.senha.length < 8) throw new Error('A senha precisa ter ao menos 8 caracteres.');
 
-      const usuario = await api.usuario.criar({
+      const { usuario, clientes } = await registrar({
+        tipo: 'cliente',
         nome: form.nome,
         email: form.email,
         senha: form.senha,
         telefone: form.telefone,
-        tipo: 'cliente',
-        status: 'ativo',
-      });
-
-      const cliente = await api.cliente.criar({
-        nome: form.nome,
-        email: form.email,
-        telefone: form.telefone,
         cpf: form.cpf,
-        usuarioId: usuario.id,
         lojaId: loja.id,
       });
+      const cliente = clientes?.find((c) => Number(c.lojaId) === loja.id);
+      if (!cliente) throw new Error('Não foi possível concluir o cadastro.');
 
       sessaoCliente.gravar(loja.slug, { usuario, cliente });
       irPara();
+      
     } catch (e) {
       setErro(e instanceof Error ? e.message : 'Não foi possível criar a conta.');
     } finally {

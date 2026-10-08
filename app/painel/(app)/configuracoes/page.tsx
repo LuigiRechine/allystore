@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import MerchantLayout from '@/src/components/MerchantLayout';
 import { api } from '@/src/lib/api';
+import { alterarSenha as alterarSenhaApi } from '@/src/lib/api';
 import { sessaoLojista, type SessaoLojista } from '@/src/lib/session';
 import { Avatar, Button, Card, Input, PageHeader, Loading, useToast } from '@/src/components/ui';
 
@@ -56,17 +57,11 @@ export default function ConfiguracoesPage() {
     if (senhas.nova !== senhas.confirmar) { show('As senhas não conferem.', 'error'); return; }
     setSalvando(true);
     try {
-      const atualizado = await api.usuario.atualizar(sessao.usuario.id, {
-        nome: sessao.usuario.nome,
-        email: sessao.usuario.email,
-        senha: senhas.nova,
-        telefone: sessao.usuario.telefone,
-        tipo: sessao.usuario.tipo,
-        status: sessao.usuario.status,
-      });
-      sessaoLojista.gravar({ ...sessao, usuario: { ...sessao.usuario, ...atualizado } });
+      
+      await alterarSenhaApi(senhas.atual, senhas.nova);
       setSenhas({ atual: '', nova: '', confirmar: '' });
       show('Senha atualizada!');
+
     } catch (e) {
       show(e instanceof Error ? e.message : 'Falha ao alterar a senha.', 'error');
     } finally {
@@ -127,9 +122,7 @@ export default function ConfiguracoesPage() {
                 <Input label="Nova senha" type="password" placeholder="Mínimo 8 caracteres" value={senhas.nova} onChange={(e) => setSenhas({ ...senhas, nova: e.target.value })} />
                 <Input label="Confirmar nova senha" type="password" placeholder="••••••••" value={senhas.confirmar} onChange={(e) => setSenhas({ ...senhas, confirmar: e.target.value })} />
               </div>
-              <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-3 mt-4 max-w-sm">
-                As senhas ainda são salvas em texto puro no banco. Antes de ir para produção, aplique hash (bcrypt/argon2) no serviço de usuário.
-              </p>
+              
               <Button className="mt-4" onClick={alterarSenha} disabled={salvando}>Alterar senha</Button>
             </Card>
           )}

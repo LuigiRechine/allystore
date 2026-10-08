@@ -49,20 +49,24 @@ function limpar(chave: string) {
   window.dispatchEvent(new Event('allystore:sessao'));
 }
 
+function sairDoServidor() {
+  if (typeof window !== 'undefined') fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
+}
+
 export const sessaoLojista = {
   ler: () => ler<SessaoLojista>(CHAVE_LOJISTA),
   gravar: (s: SessaoLojista) => gravar(CHAVE_LOJISTA, s),
-  sair: () => limpar(CHAVE_LOJISTA),
+  sair: () => { sairDoServidor(); limpar(CHAVE_LOJISTA); },
 };
 
 export const sessaoAdmin = {
   ler: () => ler<SessaoAdmin>(CHAVE_ADMIN),
   gravar: (s: SessaoAdmin) => gravar(CHAVE_ADMIN, s),
-  sair: () => limpar(CHAVE_ADMIN),
+  sair: () => { sairDoServidor(); limpar(CHAVE_ADMIN); },
 };
 
 export const sessaoCliente = {
   ler: (slug: string) => ler<SessaoCliente>(chaveCliente(slug)),
   gravar: (slug: string, s: SessaoCliente) => gravar(chaveCliente(slug), s),
-  sair: (slug: string) => limpar(chaveCliente(slug)),
+  sair: (slug: string) => { sairDoServidor(); limpar(chaveCliente(slug)); },
 };

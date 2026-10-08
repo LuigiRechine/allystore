@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { api, login } from '@/src/lib/api';
+import { login } from '@/src/lib/api';
 import { sessaoLojista } from '@/src/lib/session';
 import {
   AllysToreLogo, Button, Divider, Input,
@@ -21,13 +21,10 @@ export default function PainelEntrarPage() {
     setCarregando(true);
     setErro(null);
     try {
-      const usuario = await login(email, senha);
-      const [lojistas, lojas] = await Promise.all([api.lojista.listar(), api.loja.listar()]);
-      const lojista = lojistas.find((l) => Number(l.usuarioId) === Number(usuario.id));
-      if (!lojista) throw new Error('Esta conta não está vinculada a nenhuma loja.');
-      const loja = lojista.loja ?? lojas.find((l) => l.id === Number(lojista.lojaId));
-      if (!loja) throw new Error('Loja do lojista não encontrada.');
-
+       const { usuario, lojista, loja } = await login(email, senha);
+      if (usuario.tipo !== 'lojista' || !lojista || !loja) {
+        throw new Error('Esta conta não está vinculada a nenhuma loja.');
+      }
       sessaoLojista.gravar({ usuario, lojista, loja });
       router.replace('/painel');
     } catch (e) {

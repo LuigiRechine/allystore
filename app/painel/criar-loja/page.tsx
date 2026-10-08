@@ -5,7 +5,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { api } from '@/src/lib/api';
+import { api, registrar } from '@/src/lib/api';
 import { slugify } from '@/src/lib/format';
 import { sessaoLojista } from '@/src/lib/session';
 import {
@@ -50,34 +50,27 @@ export default function CriarLojaPage() {
     setEnviando(true);
     setErro(null);
     try {
-      const usuario = await api.usuario.criar({
+      const { usuario, lojista, loja: novaLoja } = await registrar({
+        tipo: 'lojista',
         nome: conta.nome,
         email: conta.email,
         senha: conta.senha,
         telefone: conta.telefone,
-        tipo: 'lojista',
-        status: 'ativo',
+        loja: {
+          nome: loja.nome,
+          slug: slugify(loja.slug),
+          email: loja.email || conta.email,
+          logo: loja.logo || null,
+          descricao: loja.descricao || null,
+          telefone: loja.telefone || conta.telefone,
+        },
       });
-
-      const novaLoja = await api.loja.criar({
-        nome: loja.nome,
-        slug: slugify(loja.slug),
-        email: loja.email || conta.email,
-        status: 'ativo',
-        logo: loja.logo || null,
-        descricao: loja.descricao || null,
-        telefone: loja.telefone || conta.telefone,
-      });
-
-      const lojista = await api.lojista.criar({
-        cargo: 'proprietario',
-        usuarioId: usuario.id,
-        lojaId: novaLoja.id,
-      });
+      if (!lojista || !novaLoja) throw new Error('Não foi possível criar a loja.');
 
       sessaoLojista.gravar({ usuario, lojista, loja: novaLoja });
       setCriada({ slug: novaLoja.slug });
       setPasso(3);
+      
     } catch (e) {
       setErro(e instanceof Error ? e.message : 'Não foi possível criar a loja.');
     } finally {

@@ -18,10 +18,8 @@ export default function AdminEntrarPage() {
     setCarregando(true);
     setErro(null);
     try {
-      const usuario = await login(email, senha);
-      const admins = await api.administrador.listar();
-      const ehAdmin = admins.some((a) => Number(a.usuarioId) === Number(usuario.id));
-      if (!ehAdmin && usuario.tipo !== 'admin') {
+      const { usuario } = await login(email, senha);
+      if (usuario.tipo !== 'admin') {
         throw new Error('Esta conta não tem acesso administrativo.');
       }
       sessaoAdmin.gravar({ usuario });
