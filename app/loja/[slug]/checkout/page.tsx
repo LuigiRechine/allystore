@@ -1,15 +1,16 @@
 'use client';
 
-// Fluxo real de checkout:
-//   1. POST /api/pedido           -> cria o pedido (status "novo")
-//   2. POST /api/produtoPedido    -> um por item do carrinho
-//   3. POST /api/pagamento        -> pagamento pendente (pix ou cartao)
-//   4. redireciona para a tela de pagamento
+// Fluxo de checkout (Mercado Pago Checkout Pro):
+//   1. POST /api/checkout  -> o SERVIDOR cria pedido, itens, reserva de estoque e a preferência
+//                             (preço e total vêm do banco, nunca do navegador)
+//   2. redireciona para o Mercado Pago (Pix ou cartão)
+//   3. o Mercado Pago devolve o cliente para /loja/[slug]/pagamento/[pedidoId]
+//   4. o status real chega pelo webhook (/api/webhook/mercadopago)
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { api } from '@/src/lib/api';
+import { iniciarCheckout } from '@/src/lib/api';
 import { fmt } from '@/src/lib/format';
 import { useLoja } from '@/src/context/LojaContext';
 import { useCarrinho } from '@/src/context/CarrinhoContext';
@@ -59,32 +60,14 @@ export default function CheckoutPage() {
     setEnviando(true);
     setErro(null);
     try {
-      const pedido = await api.pedido.criar({
-        status: 'novo',
-        clienteId: sessao.cliente.id,
+      const r = await iniciarCheckout({
         lojaId: loja.id,
-      });
-
-      for (const item of itens) {
-        await api.produtoPedido.criar({
-          quantidade: item.quantidade,
-          preco_unitario: item.preco,
-          subtotal: item.preco * item.quantidade,
-          pedidoId: pedido.id,
-          produtoId: item.produtoId,
-        });
-      }
-
-      await api.pagamento.criar({
-        valor: total,
         metodo,
-        status: 'pendente',
-        codigoTransacao: `ALS-${pedido.id}-${Date.now().toString(36).toUpperCase()}`,
-        pedidoId: pedido.id,
+        itens: itens.map((i) => ({ produtoId: i.produtoId, variacaoId: i.variacaoId, quantidade: i.quantidade })),
       });
-
       limpar();
-      router.push(`/loja/${loja.slug}/pagamento/${pedido.id}`);
+      // `enviando` continua true de propósito: a página vai ser substituída pelo Mercado Pago
+      window.location.href = r.initPoint;
     } catch (e) {
       setErro(e instanceof Error ? e.message : 'Não foi possível finalizar o pedido.');
       setEnviando(false);
@@ -151,7 +134,7 @@ export default function CheckoutPage() {
               <div className="flex gap-3 flex-col sm:flex-row">
                 {[
                   { id: 'pix' as const, label: 'Pix', badge: '10% off' },
-                  { id: 'cartao' as const, label: 'Cartão de crédito', badge: '3x sem juros' },
+                  { id: 'cartao' as const, label: 'Cartão de crédito', badge: 'até 3x' },
                 ].map((opt) => (
                   <label
                     key={opt.id}
@@ -164,12 +147,7 @@ export default function CheckoutPage() {
                     </div>
                     {opt.id === 'pix' && <p className="text-xs text-slate-500">Pague com QR Code ou código copia e cola</p>}
                     {opt.id === 'cartao' && (
-                      <div className="grid grid-cols-2 gap-2 mt-2">
-                        <Input placeholder="Número do cartão" />
-                        <Input placeholder="Nome no cartão" />
-                        <Input placeholder="MM/AA" />
-                        <Input placeholder="CVV" />
-                      </div>
+                      <p className="text-xs text-slate-500">Você informa os dados do cartão no ambiente seguro do Mercado Pago</p>
                     )}
                   </label>
                 ))}
@@ -205,11 +183,11 @@ export default function CheckoutPage() {
               {erro && <p className="text-xs text-red-600 mt-3">{erro}</p>}
 
               <Button fullWidth size="lg" className="mt-5" onClick={finalizar} disabled={enviando}>
-                {enviando ? 'Processando...' : metodo === 'pix' ? 'Gerar QR Code Pix' : 'Pagar agora'}
+                {enviando ? 'Redirecionando...' : metodo === 'pix' ? 'Pagar com Pix' : 'Pagar com cartão'}
               </Button>
               <div className="flex items-center gap-2 mt-3 justify-center">
                 <IconShield className="w-3.5 h-3.5 text-slate-400" />
-                <p className="text-xs text-slate-400">Compra 100% segura</p>
+                <p className="text-xs text-slate-400">Pagamento processado pelo Mercado Pago</p>
               </div>
             </div>
           </div>

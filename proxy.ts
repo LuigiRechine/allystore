@@ -21,10 +21,12 @@ const REGRAS: Record<string, { leitura: Acesso; escrita: Acesso }> = {
   produtoVariacao: { leitura: 'publico', escrita: EQUIPE },
   estoque:         { leitura: 'publico', escrita: EQUIPE },
   imagem:          { leitura: 'publico', escrita: EQUIPE },
-  // compra (o cliente precisa criar). TODO: fechar no passo do checkout seguro
-  pedido:          { leitura: LOGADOS,   escrita: LOGADOS },
-  produtoPedido:   { leitura: LOGADOS,   escrita: LOGADOS },
-  pagamento:       { leitura: LOGADOS,   escrita: LOGADOS },
+  // Pedido/pagamento agora nascem no servidor (POST /api/checkout) e o status vem do webhook do
+  // Mercado Pago. Cliente NUNCA escreve aqui: antes, qualquer logado podia dar PUT e marcar "aprovado".
+  // TODO: a LEITURA ainda é aberta a qualquer logado (expõe pedidos de outros clientes/lojas) — fechar depois.
+  pedido:          { leitura: LOGADOS,   escrita: EQUIPE },
+  produtoPedido:   { leitura: LOGADOS,   escrita: EQUIPE },
+  pagamento:       { leitura: LOGADOS,   escrita: ['admin'] },
   carrinho:        { leitura: LOGADOS,   escrita: LOGADOS },
   produtoCarrinho: { leitura: LOGADOS,   escrita: LOGADOS },
 };
@@ -51,8 +53,9 @@ export async function proxy(req: NextRequest) {
     const recurso = partes[1];
     const id = partes[2];
 
-    // login/registrar/logout/me/senha se protegem sozinhos; webhook será validado pela assinatura do provedor
-    if (recurso === 'auth' || recurso === 'webhook') return NextResponse.next();
+    // Estas rotas se protegem sozinhas: auth (login etc.), webhook (assinatura + consulta ao Mercado Pago),
+    // cron (CRON_SECRET), checkout e mercadopago (leem a sessão e conferem o papel dentro da própria rota).
+    if (['auth', 'webhook', 'cron', 'checkout', 'mercadopago'].includes(recurso)) return NextResponse.next();
 
     const regra = REGRAS[recurso];
     if (!regra) return NextResponse.json({ erro: 'Acesso negado.' }, { status: 403 }); // padrão: negar

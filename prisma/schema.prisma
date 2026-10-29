@@ -26,6 +26,8 @@ model Loja {
     produtos     Produto[]
     pedidos      Pedido[]
     carrinhos    Carrinho[]
+
+    mercadoPago  MercadoPagoConta?
 }
 
 model Usuario {
@@ -109,6 +111,7 @@ model ProdutoVariacao {
 
     estoques         Estoque[]
     produtosCarrinho ProdutoCarrinho[]
+    produtosPedido   ProdutoPedido[]
 }
 
 model Imagem {
@@ -202,11 +205,13 @@ model ProdutoPedido {
     preco_unitario      Decimal     @db.Decimal(10, 2)
     subtotal            Decimal     @db.Decimal(10, 2)
 
-    pedidoId  Int
-    produtoId Int
+    pedidoId          Int
+    produtoId         Int
+    produtoVariacaoId Int?
 
-    pedido  Pedido  @relation(fields: [pedidoId], references: [id])
-    produto Produto @relation(fields: [produtoId], references: [id])
+    pedido          Pedido           @relation(fields: [pedidoId], references: [id])
+    produto         Produto          @relation(fields: [produtoId], references: [id])
+    produtoVariacao ProdutoVariacao? @relation(fields: [produtoVariacaoId], references: [id])
 }
 
 model Pagamento {
@@ -217,8 +222,32 @@ model Pagamento {
     codigoTransacao     String      @db.VarChar(255)
     dataPagamento       DateTime    @default(now())
 
+    // Mercado Pago
+    mpPreferenceId      String?     @db.VarChar(100)
+    mpPaymentId         String?     @unique @db.VarChar(50)
+    mpStatusDetalhe     String?     @db.VarChar(100)
+    mpInitPoint         String?     @db.Text
+
     pedidoId Int
 
     pedido  Pedido  @relation(fields: [pedidoId], references: [id])
 
+}
+
+// Credenciais OAuth da conta Mercado Pago de cada loja (marketplace).
+// Fica em tabela separada de propósito: /api/loja é público e nunca deve
+// chegar perto de access_token. Os tokens são gravados CRIPTOGRAFADOS (AES-256-GCM).
+model MercadoPagoConta {
+    id           Int      @id @default(autoincrement())
+    mpUserId     String   @db.VarChar(50)
+    accessToken  String   @db.Text
+    refreshToken String   @db.Text
+    publicKey    String?  @db.VarChar(100)
+    liveMode     Boolean  @default(true)
+    expiraEm     DateTime
+    conectadoEm  DateTime @default(now())
+    atualizadoEm DateTime @updatedAt
+
+    lojaId Int  @unique
+    loja   Loja @relation(fields: [lojaId], references: [id])
 }

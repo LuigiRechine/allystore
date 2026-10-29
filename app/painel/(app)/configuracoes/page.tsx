@@ -3,12 +3,13 @@
 import { useEffect, useState } from 'react';
 import MerchantLayout from '@/src/components/MerchantLayout';
 import { api } from '@/src/lib/api';
-import { alterarSenha as alterarSenhaApi } from '@/src/lib/api';
+import { alterarSenha as alterarSenhaApi, mercadoPago, type StatusMercadoPago } from '@/src/lib/api';
 import { sessaoLojista, type SessaoLojista } from '@/src/lib/session';
-import { Avatar, Button, Card, Input, PageHeader, Loading, useToast } from '@/src/components/ui';
+import { Avatar, Badge, Button, Card, Input, PageHeader, Loading, useToast } from '@/src/components/ui';
 
 const ABAS = [
   { id: 'perfil', label: 'Perfil' },
+  { id: 'pagamentos', label: 'Pagamentos' },
   { id: 'seguranca', label: 'Segurança' },
   { id: 'notificacoes', label: 'Notificações' },
 ];
@@ -20,6 +21,28 @@ export default function ConfiguracoesPage() {
   const [salvando, setSalvando] = useState(false);
   const [perfil, setPerfil] = useState({ nome: '', email: '', telefone: '' });
   const [senhas, setSenhas] = useState({ atual: '', nova: '', confirmar: '' });
+  const [mp, setMp] = useState<StatusMercadoPago | null>(null);
+
+  // Volta do Mercado Pago: /painel/configuracoes?aba=pagamentos&mp=conectado|erro
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search);
+    if (q.get('aba') === 'pagamentos') setAba('pagamentos');
+    const r = q.get('mp');
+    if (r === 'conectado') show('Mercado Pago conectado! Sua loja já pode vender.');
+    if (r === 'erro') show('Não foi possível conectar o Mercado Pago. Tente novamente.', 'error');
+    mercadoPago.status().then(setMp).catch(() => setMp({ conectado: false }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const desconectarMp = async () => {
+    if (!window.confirm('Desconectar o Mercado Pago? A loja deixa de receber pagamentos até você conectar de novo.')) return;
+    try {
+      setMp(await mercadoPago.desconectar());
+      show('Mercado Pago desconectado.', 'info');
+    } catch (e) {
+      show(e instanceof Error ? e.message : 'Falha ao desconectar.', 'error');
+    }
+  };
 
   useEffect(() => {
     const s = sessaoLojista.ler();
@@ -111,6 +134,36 @@ export default function ConfiguracoesPage() {
               <Button className="mt-4" onClick={salvarPerfil} disabled={salvando}>
                 {salvando ? 'Salvando...' : 'Salvar'}
               </Button>
+            </Card>
+          )}
+
+          {aba === 'pagamentos' && (
+            <Card className="p-6">
+              <div className="flex items-center justify-between gap-3 mb-2">
+                <h2 className="font-semibold text-slate-900">Mercado Pago</h2>
+                {mp && <Badge color={mp.conectado ? 'green' : 'yellow'}>{mp.conectado ? 'Conectado' : 'Não conectado'}</Badge>}
+              </div>
+              <p className="text-sm text-slate-600 mb-5">
+                Conecte a conta do Mercado Pago da sua loja. Os pagamentos dos seus clientes (Pix e cartão) caem direto na sua conta.
+              </p>
+              {!mp && <Loading />}
+              {mp && !mp.conectado && (
+                <Button onClick={() => { window.location.href = '/api/mercadopago/oauth/connect'; }}>
+                  Conectar Mercado Pago
+                </Button>
+              )}
+              {mp?.conectado && (
+                <div className="space-y-4">
+                  <div className="text-sm text-slate-600 space-y-1">
+                    <p>Conta Mercado Pago: <span className="font-medium text-slate-800">{mp.mpUserId}</span></p>
+                    <p>Modo: <span className="font-medium text-slate-800">{mp.liveMode ? 'Produção' : 'Teste'}</span></p>
+                  </div>
+                  <div className="flex gap-2 flex-wrap">
+                    <Button variant="outline" onClick={() => { window.location.href = '/api/mercadopago/oauth/connect'; }}>Reconectar</Button>
+                    <Button variant="danger" onClick={desconectarMp}>Desconectar</Button>
+                  </div>
+                </div>
+              )}
             </Card>
           )}
 

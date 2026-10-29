@@ -114,6 +114,43 @@ export function alterarSenha(atual: string, nova: string) {
   return request<{ ok: true }>('/api/auth/senha', { method: 'POST', body: JSON.stringify({ atual, nova }) });
 }
 
+// ---------- Mercado Pago ----------
+
+export interface StatusCheckout {
+  pedidoId: number;
+  pedidoStatus: string; // novo | pago | cancelado ...
+  pagamento: null | {
+    status: string;     // pendente | aprovado | recusado | cancelado | expirado | estornado
+    metodo: string;
+    valor: number;
+    detalhe: string | null;
+    linkPagamento: string | null;
+  };
+}
+
+/** Cria pedido + pagamento no servidor e devolve o link do Mercado Pago. Preço/total são calculados lá. */
+export function iniciarCheckout(corpo: {
+  lojaId: number;
+  metodo: 'pix' | 'cartao';
+  itens: { produtoId: number; variacaoId: number | null; quantidade: number }[];
+}) {
+  return request<{ pedidoId: number; initPoint: string; total: number }>('/api/checkout', {
+    method: 'POST',
+    body: JSON.stringify(corpo),
+  });
+}
+
+export function statusDoCheckout(pedidoId: number | string, paymentId?: string | null) {
+  const qs = paymentId ? `?payment_id=${encodeURIComponent(paymentId)}` : '';
+  return request<StatusCheckout>(`/api/checkout/status/${pedidoId}${qs}`);
+}
+
+export interface StatusMercadoPago { conectado: boolean; mpUserId?: string; liveMode?: boolean; conectadoEm?: string }
+export const mercadoPago = {
+  status: () => request<StatusMercadoPago>('/api/mercadopago/status'),
+  desconectar: () => request<StatusMercadoPago>('/api/mercadopago/status', { method: 'DELETE' }),
+};
+
 /** Busca a loja pelo slug (filtra no cliente para funcionar sem rota editada). */
 export async function buscarLojaPorSlug(slug: string): Promise<Loja | null> {
   const lojas = await api.loja.listar();
