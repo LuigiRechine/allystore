@@ -216,8 +216,8 @@ export async function criarCheckout(entrada: {
       expiration_date_from: new Date().toISOString(),
       expiration_date_to: new Date(Date.now() + EXPIRACAO_PREFERENCIA_HORAS * 3600 * 1000).toISOString(),
       payment_methods: metodo === 'pix'
-        ? { excluded_payment_types: ['credit_card', 'debit_card', 'ticket', 'atm', 'prepaid_card', 'account_money'].map((id) => ({ id })) }
-        : { excluded_payment_types: ['bank_transfer', 'debit_card', 'ticket', 'atm', 'prepaid_card', 'account_money'].map((id) => ({ id })), installments: 3 },
+        ? { excluded_payment_types: ['credit_card', 'debit_card', 'ticket', 'atm', 'prepaid_card'].map((id) => ({ id })) }
+        : { excluded_payment_types: ['bank_transfer', 'debit_card', 'ticket', 'atm', 'prepaid_card'].map((id) => ({ id })), installments: 3 },
       ...(comissao > 0 ? { marketplace_fee: deCentavos(comissao) } : {}),
     };
 
