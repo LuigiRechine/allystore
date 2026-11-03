@@ -200,13 +200,16 @@ export async function criarCheckout(entrada: {
         unit_price: deCentavos(l.precoCobrado),
         currency_id: 'BRL',
       })),
-      payer: {
-        name: primeiroNome,
-        surname: sobrenome.join(' ') || undefined,
-        email: cliente.email,
-        ...(tel.length >= 10 ? { phone: { area_code: tel.slice(0, 2), number: tel.slice(2) } } : {}),
-        ...(cpf.length === 11 ? { identification: { type: 'CPF' as const, number: cpf } } : {}),
-      },
+      // Em teste, o comprador de teste se identifica na tela do Mercado Pago; dados reais aqui conflitam.
+      ...(process.env.MP_MODO_TESTE === '1' ? {} : {
+        payer: {
+          name: primeiroNome,
+          surname: sobrenome.join(' ') || undefined,
+          email: cliente.email,
+          ...(tel.length >= 10 ? { phone: { area_code: tel.slice(0, 2), number: tel.slice(2) } } : {}),
+          ...(cpf.length === 11 ? { identification: { type: 'CPF' as const, number: cpf } } : {}),
+        },
+      }),
       external_reference: String(pedidoId),
       back_urls: { success: retorno, pending: retorno, failure: retorno },
       notification_url: `${app}/api/webhook/mercadopago?lojaId=${lojaId}`,
@@ -215,6 +218,7 @@ export async function criarCheckout(entrada: {
       expires: true,
       expiration_date_from: new Date().toISOString(),
       expiration_date_to: new Date(Date.now() + EXPIRACAO_PREFERENCIA_HORAS * 3600 * 1000).toISOString(),
+      // account_money (saldo do Mercado Pago) NÃO pode ser excluído: a API recusa a preferência
       payment_methods: metodo === 'pix'
         ? { excluded_payment_types: ['credit_card', 'debit_card', 'ticket', 'atm', 'prepaid_card'].map((id) => ({ id })) }
         : { excluded_payment_types: ['bank_transfer', 'debit_card', 'ticket', 'atm', 'prepaid_card'].map((id) => ({ id })), installments: 3 },
