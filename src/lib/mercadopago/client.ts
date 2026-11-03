@@ -47,7 +47,7 @@ export interface RespostaOAuth {
   expires_in: number; // segundos (~180 dias)
 }
 
-export function trocarCodigoPorToken(code: string) {
+export function trocarCodigoPorToken(code: string, codeVerifier: string) {
   return chamar<RespostaOAuth>('/oauth/token', {
     method: 'POST',
     json: {
@@ -56,6 +56,7 @@ export function trocarCodigoPorToken(code: string) {
       grant_type: 'authorization_code',
       code,
       redirect_uri: redirectUriOAuth(),
+      code_verifier: codeVerifier,
     },
   });
 }

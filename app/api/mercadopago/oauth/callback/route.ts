@@ -8,7 +8,9 @@ import { salvarConta } from '@/src/lib/mercadopago/contaLoja';
 // Redirect URL cadastrada no app do Mercado Pago: /api/mercadopago/oauth/callback
 
 function voltar(resultado: 'conectado' | 'erro') {
-  return NextResponse.redirect(`${urlApp()}/painel/configuracoes?aba=pagamentos&mp=${resultado}`);
+  const r = NextResponse.redirect(`${urlApp()}/painel/configuracoes?aba=pagamentos&mp=${resultado}`);
+  r.cookies.delete({ name: 'mp_pkce', path: '/api/mercadopago/oauth' }); // o verifier é de uso único
+  return r;
 }
 
 export async function GET(req: NextRequest) {
@@ -24,7 +26,10 @@ export async function GET(req: NextRequest) {
     const { payload } = await jwtVerify(state, segredo);
     if (payload.fim !== 'mp-oauth' || Number(payload.usuarioId) !== sessao.id) return voltar('erro');
 
-    const tokens = await trocarCodigoPorToken(code);
+    const verifier = req.cookies.get('mp_pkce')?.value;
+    if (!verifier) return voltar('erro'); // cookie expirou (10 min) ou o fluxo não começou por /connect
+
+    const tokens = await trocarCodigoPorToken(code, verifier);
     await salvarConta(Number(payload.lojaId), tokens);
     return voltar('conectado');
   } catch (e) {

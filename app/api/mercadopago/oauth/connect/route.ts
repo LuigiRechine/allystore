@@ -3,6 +3,7 @@ import { SignJWT } from 'jose';
 import prisma from '@/src/lib/prisma';
 import { lerSessao } from '@/src/lib/auth';
 import { AUTH_MP, mp, redirectUriOAuth } from '@/src/lib/mercadopago/config';
+import { gerarChallenge, gerarVerifier } from '@/src/lib/mercadopago/pkce';
 
 // O lojista clica em "Conectar Mercado Pago" -> vem para cá -> é enviado ao Mercado Pago autorizar.
 // O `state` é um JWT curto assinado com o ID do lojista/loja: na volta, só aceitamos o código
@@ -30,7 +31,21 @@ export async function GET() {
     url.searchParams.set('platform_id', 'mp');
     url.searchParams.set('state', state);
     url.searchParams.set('redirect_uri', redirectUriOAuth());
-    return NextResponse.redirect(url);
+
+    // PKCE: o verifier fica num cookie httpOnly (só o servidor lê); o challenge vai na URL
+    const verifier = gerarVerifier();
+    url.searchParams.set('code_challenge', gerarChallenge(verifier));
+    url.searchParams.set('code_challenge_method', 'S256');
+
+    const resposta = NextResponse.redirect(url);
+    resposta.cookies.set('mp_pkce', verifier, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax', // o retorno do Mercado Pago é uma navegação de topo, então o cookie Lax é enviado
+      path: '/api/mercadopago/oauth',
+      maxAge: 600,
+    });
+    return resposta;
   } catch (e) {
     console.error('[mercadopago/connect]', e);
     return NextResponse.json({ erro: 'Não foi possível iniciar a conexão com o Mercado Pago.' }, { status: 500 });

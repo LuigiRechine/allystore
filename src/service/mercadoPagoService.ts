@@ -15,6 +15,7 @@ import {
   comissaoCentavos, deCentavos, paraCentavos, precoComDesconto, traduzirStatus,
 } from '@/src/lib/mercadopago/precos';
 
+// Tipo da transação do client ESTENDIDO do projeto (src/lib/prisma.ts); Prisma.TransactionClient não é compatível com ele.
 type Tx = Omit<typeof prisma, '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'>;
 
 export class ErroCheckout extends Error {
