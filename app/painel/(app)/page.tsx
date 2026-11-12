@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import MerchantLayout from '@/src/components/MerchantLayout';
@@ -25,29 +25,44 @@ export default function DashboardPage() {
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
 
-  const carregar = async () => {
-    const sessao = sessaoLojista.ler();
-    if (!sessao) return;
-    setCarregando(true);
-    setErro(null);
-    try {
-      const [ps, peds, itens, imgs, vars, ests] = await Promise.all([
-        api.produto.listar(), api.pedido.listar(), api.produtoPedido.listar(),
-        api.imagem.listar(), api.produtoVariacao.listar(), api.estoque.listar(),
-      ]);
-      setDados({
-        produtos: ps.filter((p) => Number(p.lojaId) === sessao.loja.id),
-        pedidos: peds.filter((p) => Number(p.lojaId) === sessao.loja.id),
-        itens, imagens: imgs, variacoes: vars, estoques: ests,
-      });
-    } catch (e) {
-      setErro(e instanceof Error ? e.message : 'Erro ao carregar o dashboard.');
-    } finally {
-      setCarregando(false);
-    }
+  const carregar = useCallback(async (silencioso = false) => {
+  const sessao = sessaoLojista.ler();
+  if (!sessao) return;
+  if (!silencioso) { setCarregando(true); setErro(null); }
+  try {
+    const [ps, peds, itens, imgs, vars, ests] = await Promise.all([
+      api.produto.listar(), api.pedido.listar(), api.produtoPedido.listar(),
+      api.imagem.listar(), api.produtoVariacao.listar(), api.estoque.listar(),
+    ]);
+    setDados({
+      produtos: ps.filter((p) => Number(p.lojaId) === sessao.loja.id),
+      pedidos: peds.filter((p) => Number(p.lojaId) === sessao.loja.id),
+      itens, imagens: imgs, variacoes: vars, estoques: ests,
+    });
+  } catch (e) {
+    if (!silencioso) setErro(e instanceof Error ? e.message : 'Erro ao carregar o dashboard.');
+  } finally {
+    if (!silencioso) setCarregando(false);
+  }
+}, []);
+
+useEffect(() => {
+  carregar();
+
+  const atualizar = () => {
+    if (document.visibilityState === 'visible') carregar(true);
   };
 
-  useEffect(() => { carregar(); }, []);
+  const timer = setInterval(atualizar, 15000); // recarrega a cada 15 segundos
+  document.addEventListener('visibilitychange', atualizar); // ao voltar para a aba
+  window.addEventListener('focus', atualizar);
+
+  return () => {
+    clearInterval(timer);
+    document.removeEventListener('visibilitychange', atualizar);
+    window.removeEventListener('focus', atualizar);
+  };
+}, [carregar]);
 
   const metricas = useMemo(() => {
     if (!dados) return null;
@@ -114,7 +129,7 @@ export default function DashboardPage() {
       {carregando ? (
         <Loading />
       ) : erro ? (
-        <ErrorState message={erro} onRetry={carregar} />
+        <ErrorState message={erro} onRetry={() => carregar()} />
       ) : !metricas ? null : (
         <>
           <div className="flex items-center justify-between mb-6 gap-4 flex-wrap">

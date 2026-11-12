@@ -390,12 +390,18 @@ export function PageHeader({ title, description, action }: {
 
 export function BarChart({ data }: { data: { label: string; value: number }[] }) {
   const max = Math.max(...data.map((d) => d.value), 1);
+  const ALTURA = 112; // altura máxima da barra, em px
+
   return (
-    <div className="flex items-end gap-2 h-32">
+    <div className="flex items-end gap-2 h-36">
       {data.map((d, i) => (
-        <div key={i} className="flex-1 flex flex-col items-center gap-1">
-          <div className="w-full bg-indigo-500 rounded-t-md transition-all duration-500" style={{ height: `${(d.value / max) * 100}%`, minHeight: '4px' }} />
-          <span className="text-[10px] text-slate-500 truncate w-full text-center">{d.label}</span>
+        <div key={i} className="flex-1 h-full flex flex-col items-center justify-end gap-1">
+          <div
+            className="w-full bg-indigo-500 rounded-t-md transition-all duration-500"
+            style={{ height: Math.max((d.value / max) * ALTURA, 4) }}
+            title={`${d.label}: R$ ${d.value.toFixed(2)}`}
+          />
+          <span className="text-[10px] text-slate-500 truncate w-full text-center h-4">{d.label}</span>
         </div>
       ))}
     </div>
